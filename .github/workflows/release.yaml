@@ -1,0 +1,46 @@
+name: Build and release Systemd sysext images
+on:
+  push:
+    tags:
+      - 'latest'
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    permissions:
+      # allow the action to create a release
+      contents: write
+    steps:
+      # checkout the sources
+      - uses: actions/checkout@v4
+
+      # prepare build host
+      - name: install prerequisites
+        run: |
+          set -euxo pipefail
+
+          sudo apt update -qq && sudo apt install -yqq \
+            curl \
+            jq \
+            squashfs-tools \
+            xz-utils \
+            gawk
+
+      - name: build release artifacts
+        run: |
+          ./create_containerd_sysext.sh 2.0.0-rc.2 containerd-nine
+          mv containerd-nine.raw containerd-nine-2.0.0-rc.2.raw
+          sha256sum *.raw | tee SHA256SUMS
+
+      - name: delete previous latest release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --cleanup-tag || true
+
+      - name: create a new latest release with all artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            SHA256SUMS
+            *.raw
+            *.conf
