@@ -2,6 +2,7 @@
 set -euo pipefail
 
 export ARCH="${ARCH-amd64}"
+export RUNC_VERSION="${RUNC_VERSION-v1.2.0-rc.1}"
 SCRIPTFOLDER="$(dirname "$(readlink -f "$0")")"
 ONLY_CONTAINERD="${ONLY_CONTAINERD:-0}"
 
@@ -21,13 +22,16 @@ SYSEXTNAME="$2"
 
 rm -f "containerd-${VERSION}.tgz"
 curl -o "containerd-${VERSION}.tgz" -fsSL "https://github.com/containerd/containerd/releases/download/v${VERSION}/containerd-${VERSION}-linux-${ARCH}.tar.gz"
-# TODO: Also allow to consume upstream containerd and runc release binaries with their respective versions
+rm -f runc${ARCH}
+curl -o runc -fsSL "https://github.com/opencontainers/runc/releases/download/${RUNC_VERSION}/runc.${ARCH}"
 rm -rf "${SYSEXTNAME}"
 mkdir -p "${SYSEXTNAME}"
 tar --force-local -xf "containerd-${VERSION}.tgz" -C "${SYSEXTNAME}"
 rm "containerd-${VERSION}.tgz"
 mkdir -p "${SYSEXTNAME}"/usr/bin
 mv "${SYSEXTNAME}"/bin/* "${SYSEXTNAME}"/usr/bin/
+chmod +x runc
+mv runc "${SYSEXTNAME}"/usr/bin
 rmdir "${SYSEXTNAME}"/bin
 mkdir -p "${SYSEXTNAME}/usr/lib/systemd/system"
 
