@@ -3,6 +3,11 @@ on:
   push:
     tags:
       - 'latest'
+
+env:
+  RUNC_VERSION: v1.2.0-rc.2
+  CONTAINERD_VERSION: 2.0.0-rc.3
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -27,8 +32,8 @@ jobs:
 
       - name: build release artifacts
         run: |
-          ./create_containerd_sysext.sh 2.0.0-rc.2 containerd-nine
-          mv containerd-nine.raw containerd-nine-2.0.0-rc.2.raw
+          ./create_containerd_sysext.sh $CONTAINERD_VERSION containerd-nine
+          mv containerd-nine.raw "containerd-nine-${CONTAINERD_VERSION}.raw"
           sha256sum *.raw | tee SHA256SUMS
 
       - name: delete previous latest release
